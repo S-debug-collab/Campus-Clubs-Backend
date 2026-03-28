@@ -33,9 +33,8 @@ app.use("/api/clubs", clubRoutes);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/events", eventRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/events", eventRoutes);
 app.use("/api/suggestions", suggestionRoutes);
-app.use("/uploads", express.static("uploads"));
+
 
 
 
