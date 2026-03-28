@@ -13,7 +13,7 @@ import {
 
 import { protect, authorize } from "../middleware/AuthMiddleware.js";
 import upload from "../middleware/Upload.js";
-
+import cloudinary from "../config/cloudinary.js";
 const router = express.Router();
 
 // CREATE EVENT
