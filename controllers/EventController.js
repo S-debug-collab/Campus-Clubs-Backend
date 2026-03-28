@@ -1,6 +1,7 @@
 import Event from "../models/Event.js";
 import Notification from "../models/Notification.js";
 import User from "../models/User.js";
+import cloudinary from "../config/cloudinary.js";
 
 // ================== CREATE EVENT ==================
 export const createEvent = async (req, res) => {
@@ -11,9 +12,15 @@ export const createEvent = async (req, res) => {
       });
     }
 
-    const posterPath = req.file
-      ? `/uploads/${req.file.filename}`
-      : null;
+    let posterPath = null;
+
+if (req.file) {
+  const result = await cloudinary.uploader.upload(req.file.path, {
+    folder: "events",
+  });
+
+  posterPath = result.secure_url;
+}
 
     const event = await Event.create({
       title: req.body.title,
@@ -118,9 +125,15 @@ export const uploadEventPhotos = async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    const photoUrls = req.files.map(
-      (file) => `/uploads/${file.filename}`
-    );
+  const photoUrls = [];
+
+for (const file of req.files) {
+  const result = await cloudinary.uploader.upload(file.path, {
+    folder: "events/photos",
+  });
+
+  photoUrls.push(result.secure_url);
+}
 
     event.photos.push(...photoUrls);
     await event.save();
@@ -143,7 +156,12 @@ export const uploadEventReport = async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    event.reportFile = `/uploads/${req.file.filename}`;
+const result = await cloudinary.uploader.upload(req.file.path, {
+  folder: "events/reports",
+  resource_type: "raw", // for docs/pdf
+});
+
+event.reportFile = result.secure_url;
     await event.save();
 
     res.json({ message: "Report uploaded", event });
