@@ -6,7 +6,9 @@ import cloudinary from "../config/cloudinary.js";
 // ================== CREATE EVENT ==================
 export const createEvent = async (req, res) => {
   try {
-        console.log("CLOUD:", process.env.CLOUD_NAME);
+      
+    console.log("CLOUD:", process.env.CLOUD_NAME);
+console.log("FILE:", req.file);
     if (!req.user.club) {
       return res.status(400).json({
         message: "Club not assigned to user",
