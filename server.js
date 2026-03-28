@@ -43,6 +43,11 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000; // fallback to 10000 for local dev
 
+app.use((err, req, res, next) => {
+  console.error("GLOBAL ERROR:", err);
+  res.status(500).json({ message: err.message });
+});
+
 connectDB().then(() => {
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
