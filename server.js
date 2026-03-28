@@ -8,7 +8,7 @@ import adminRoutes from "./routes/AdminRoute.js";
 import clubRoutes from "./routes/ClubRoute.js"
 import eventRoutes from "./routes/EventRoute.js"
 import notificationRoutes from "./routes/NotificationRoute.js";
-import "./jobs/EventReminderJob.js";
+//import "./jobs/EventReminderJob.js";
 import suggestionRoutes from "./routes/SuggestionRoute.js";
 
 
@@ -43,13 +43,8 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000; // fallback to 10000 for local dev
 
-
 connectDB().then(() => {
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
     });
-}).catch((err) => {
-    console.error("DB connection failed:", err);
 });
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
