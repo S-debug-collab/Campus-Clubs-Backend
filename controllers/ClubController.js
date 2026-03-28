@@ -1,38 +1,43 @@
 import Club from "../models/Club.js";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
+import cloudinary from "../config/cloudinary.js"; // ✅ ADD THIS
 
 // ================= CREATE CLUB =================
 export const createClub = async (req, res) => {
   try {
     const { name, description, leadEmail } = req.body;
 
-    // ✅ Validate description length (~100 words ~500 chars)
     if (!description || description.length < 500) {
       return res
         .status(400)
         .json({ message: "Description must be around 100 words" });
     }
 
-    // ✅ Find the lead
     const lead = await User.findOne({ email: leadEmail });
     if (!lead) return res.status(404).json({ message: "Lead not found" });
 
-    // ✅ Assign role and club to user
     lead.role = "clubLead";
 
-    // ✅ Create club with optional logo
+    // ✅ CLOUDINARY UPLOAD
+    let logo = null;
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "clubs",
+      });
+      logo = result.secure_url;
+    }
+
     const club = await Club.create({
       name,
       description,
       lead: lead._id,
-      logo: req.file ? `/uploads/${req.file.filename}` : null,
+      logo, // ✅ store cloudinary URL
     });
 
     lead.club = club._id;
     await lead.save();
 
-    // ✅ Notify lead
     await Notification.create({
       user: lead._id,
       message: `You are now the club lead of "${club.name}" 🎯`,
@@ -60,18 +65,14 @@ export const updateClub = async (req, res) => {
   try {
     const { name, description, leadEmail } = req.body;
 
-    // ✅ FIRST create club
     const club = await Club.findById(req.params.id);
-
     if (!club) {
       return res.status(404).json({ message: "Club not found" });
     }
 
-    // ✅ THEN update fields
     if (name) club.name = name;
     if (description) club.description = description;
 
-    // ✅ THEN handle lead
     if (leadEmail) {
       const user = await User.findOne({ email: leadEmail });
 
@@ -81,21 +82,23 @@ export const updateClub = async (req, res) => {
 
       club.lead = user._id;
 
-      // 🔥 IMPORTANT
       user.role = "clubLead";
-      user.club = club._id;  
+      user.club = club._id;
       await user.save();
 
-       await Notification.create({
-    user: user._id,
-    message: `🎉 Congrats ${user.name}, you're now the Club Lead of ${club.name}!`,
-  });
-      
+      await Notification.create({
+        user: user._id,
+        message: `🎉 Congrats ${user.name}, you're now the Club Lead of ${club.name}!`,
+      });
     }
 
-    // ✅ logo update
+    // ✅ CLOUDINARY UPDATE
     if (req.file) {
-      club.logo = `/uploads/${req.file.filename}`;
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "clubs",
+      });
+
+      club.logo = result.secure_url;
     }
 
     await club.save();
@@ -107,13 +110,13 @@ export const updateClub = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 // ================= DELETE CLUB =================
 export const deleteClub = async (req, res) => {
   try {
     const club = await Club.findById(req.params.id);
     if (!club) return res.status(404).json({ message: "Club not found" });
 
-    // Reset lead role
     if (club.lead) {
       await User.findByIdAndUpdate(club.lead, { role: "student", club: null });
     }
@@ -124,4 +127,3 @@ export const deleteClub = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
