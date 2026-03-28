@@ -35,9 +35,21 @@ app.use("/api/events", eventRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/suggestions", suggestionRoutes);
 
-
+app.use((err, req, res, next) => {
+    console.error("ERROR:", err);
+    res.status(500).send("Server Error");
+});
 
 
 const PORT = process.env.PORT || 5000; // fallback to 10000 for local dev
+
+
+connectDB().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}).catch((err) => {
+    console.error("DB connection failed:", err);
+});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
