@@ -58,7 +58,6 @@ export const createEvent = async (req, res) => {
   }
 };
 
-// ================== GET ALL EVENTS ==================
 export const getAllEvents = async (req, res) => {
   try {
     const { club } = req.query;
@@ -67,10 +66,17 @@ export const getAllEvents = async (req, res) => {
     const events = await Event.find(filter)
       .populate("club", "name")
       .populate("createdBy", "_id name email")
-      .populate("registeredUsers", "_id");
+      .populate("registeredUsers", "_id")
+      .lean(); // 🔥 IMPORTANT
 
-    res.json(events);
+    // 🔥 REMOVE DUPLICATES
+    const uniqueEvents = Array.from(
+      new Map(events.map((e) => [e._id.toString(), e])).values()
+    );
+
+    res.json(uniqueEvents);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to fetch events" });
   }
 };
