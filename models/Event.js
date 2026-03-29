@@ -14,7 +14,7 @@ const eventSchema = new mongoose.Schema(
   },
 
   highlights: {
-    type: [String],   // bullet points like in poster page
+    type: [String],
     default: []
   },
 
@@ -73,9 +73,10 @@ const eventSchema = new mongoose.Schema(
     type: String,
     default: null
   },
+
   registeredUsers: [
-  { type: mongoose.Schema.Types.ObjectId, ref: "User" }
-],
+    { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+  ],
 
   status: {
     type: String,
@@ -85,6 +86,12 @@ const eventSchema = new mongoose.Schema(
 
 },
 { timestamps: true }
+);
+
+// ✅ ADD INDEX HERE (BEFORE EXPORT)
+eventSchema.index(
+  { title: 1, date: 1, club: 1 },
+  { unique: true }
 );
 
 export default mongoose.model("Event", eventSchema);
