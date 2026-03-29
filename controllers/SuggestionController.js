@@ -32,13 +32,29 @@ export const toggleVote = async (req, res) => {
 // CREATE suggestion
 export const createSuggestion = async (req, res) => {
   try {
+    const { topic, description } = req.body;
+
+    // 🔥 CHECK DUPLICATE (same user + same content)
+    const existing = await Suggestion.findOne({
+      user: req.user._id,
+      topic: topic.trim(),
+      description: description.trim(),
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message: "You already submitted this suggestion 🚫",
+      });
+    }
+
     const suggestion = await Suggestion.create({
       user: req.user._id,
-      topic: req.body.topic,
-      description: req.body.description
+      topic: topic.trim(),
+      description: description.trim(),
     });
 
     res.status(201).json(suggestion);
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
