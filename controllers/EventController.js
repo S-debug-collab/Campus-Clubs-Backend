@@ -264,23 +264,58 @@ export const deleteEvent = async (req, res) => {
 export const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { venue, date, time } = req.body;
+    const { venue, date, time, customMessage } = req.body;
 
     const event = await Event.findById(id).populate("registeredUsers");
 
-    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
 
-    if (venue) event.venue = venue;
-    if (date) event.date = date;
-    if (time) event.time = time;
+    let changes = [];
+
+    // ✅ TRACK FIELD CHANGES
+    if (venue && venue !== event.venue) {
+      changes.push(`📍 Venue: ${event.venue || "N/A"} → ${venue}`);
+      event.venue = venue;
+    }
+
+    if (date && new Date(date).toISOString() !== event.date.toISOString()) {
+      const oldDate = new Date(event.date).toLocaleDateString("en-IN");
+      const newDate = new Date(date).toLocaleDateString("en-IN");
+
+      changes.push(`📅 Date: ${oldDate} → ${newDate}`);
+      event.date = date;
+    }
+
+    if (time && time !== event.time) {
+      changes.push(`⏰ Time: ${event.time || "N/A"} → ${time}`);
+      event.time = time;
+    }
 
     await event.save();
+
+    // 🔥 BUILD FINAL MESSAGE
+    let message = `🔔 Update for "${event.title}":\n`;
+
+    if (changes.length > 0) {
+      message += changes.join("\n") + "\n";
+    }
+
+    if (customMessage) {
+      message += `\n📝 Note: ${customMessage}`;
+    }
+
+    // ❌ If nothing at all
+    if (!customMessage && changes.length === 0) {
+      return res.json({ message: "No changes made" });
+    }
 
     const notifications = event.registeredUsers.map(
       (user) =>
         new Notification({
           user: user._id,
-          message: `Event "${event.title}" updated`,
+          message,
           type: "update",
         })
     );
@@ -288,7 +323,9 @@ export const updateEvent = async (req, res) => {
     await Notification.insertMany(notifications);
 
     res.json({ message: "Updated + notified" });
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
