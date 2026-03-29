@@ -9,11 +9,15 @@ const suggestionSchema = new mongoose.Schema(
     },
     topic: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
-    description: String,
+    description: {
+      type: String,
+      trim: true
+    },
 
-    // 🔥 NEW
+    // 🔥 VOTES
     votes: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -22,6 +26,12 @@ const suggestionSchema = new mongoose.Schema(
     ]
   },
   { timestamps: true }
+);
+
+// 🔥🔥 PREVENT DUPLICATES (MOST IMPORTANT)
+suggestionSchema.index(
+  { user: 1, topic: 1, description: 1 },
+  { unique: true }
 );
 
 export default mongoose.model("Suggestion", suggestionSchema);
