@@ -27,6 +27,20 @@ export const createEvent = async (req, res) => {
       });
     }
 
+    // 🔥 1️⃣ CHECK DUPLICATE FIRST (VERY IMPORTANT)
+    const existing = await Event.findOne({
+      title: req.body.title,
+      date: req.body.date,
+      club: req.user.club,
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message: "Event already exists 🚫",
+      });
+    }
+
+    // 🔥 2️⃣ UPLOAD POSTER (if exists)
     let posterPath = null;
 
     if (req.file) {
@@ -34,6 +48,7 @@ export const createEvent = async (req, res) => {
       posterPath = result.secure_url;
     }
 
+    // 🔥 3️⃣ CREATE EVENT
     const event = await Event.create({
       title: req.body.title,
       description: req.body.description,
@@ -52,12 +67,20 @@ export const createEvent = async (req, res) => {
     });
 
     res.status(201).json(event);
+
   } catch (error) {
     console.error("CREATE EVENT ERROR:", error);
+
+    // 🔥 4️⃣ HANDLE DUPLICATE DB ERROR (extra safety)
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message: "Event already exists 🚫",
+      });
+    }
+
     res.status(500).json({ message: error.message });
   }
 };
-
 export const getAllEvents = async (req, res) => {
   try {
     const { club } = req.query;
